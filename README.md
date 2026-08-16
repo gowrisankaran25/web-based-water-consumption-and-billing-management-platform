@@ -9,7 +9,6 @@ This platform is designed for multiple user roles and billing workflows, includi
 - Super Admin
 - Community Admin
 - Resident
-- Field Technician
 
 It supports end-to-end management of water consumption and billing operations in a community or utility environment.
 
