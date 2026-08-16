@@ -17,7 +17,7 @@
     <description>Web-Based Water Consumption and Billing Management Platform Backend</description>
 
     <properties>
-        <java.version>24</java.version>
+        <java.version>25</java.version>
         <jjwt.version>0.12.5</jjwt.version>
         <lombok.version>1.18.38</lombok.version>
     </properties>
