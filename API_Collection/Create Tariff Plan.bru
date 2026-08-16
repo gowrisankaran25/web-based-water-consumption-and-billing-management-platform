@@ -1,0 +1,35 @@
+meta {
+  name: Create Tariff Plan
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/api/tariffs
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "communityId": "COMM-1",
+    "name": "Standard Tier Plan",
+    "waterTiers": [
+      {
+        "maxVolumeKL": 10.0,
+        "ratePerKL": 12.0
+      },
+      {
+        "maxVolumeKL": 20.0,
+        "ratePerKL": 18.0
+      },
+      {
+        "ratePerKL": 25.0
+      }
+    ],
+    "fixedInfrastructureCharge": 100.0,
+    "sewerFeePerKL": 4.0,
+    "stormwaterFlatFee": 60.0,
+    "baselineMinimumCharge": 450.0
+  }
+}

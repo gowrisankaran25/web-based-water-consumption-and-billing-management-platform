@@ -1,0 +1,22 @@
+﻿# OS / editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Java / Maven
+**/target/
+**/bin/
+**/build/
+*.class
+
+# Node / frontend
+**/node_modules/
+**/dist/
+**/coverage/
+.env
+.env.*
+
+# Logs
+*.log

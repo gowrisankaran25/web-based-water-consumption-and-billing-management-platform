@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .glass-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+  }
+}

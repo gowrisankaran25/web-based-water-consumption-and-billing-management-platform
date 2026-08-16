@@ -1,0 +1,151 @@
+package com.watermanagement.service;
+
+import com.watermanagement.model.Community;
+import com.watermanagement.model.Household;
+import com.watermanagement.model.Invoice;
+import com.watermanagement.model.MeterReading;
+import com.watermanagement.model.ResidentInvitation;
+import com.watermanagement.repository.CommunityRepository;
+import com.watermanagement.repository.HouseholdRepository;
+import com.watermanagement.repository.InvoiceRepository;
+import com.watermanagement.repository.MeterReadingRepository;
+import com.watermanagement.repository.ResidentInvitationRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class CommunityAdminService {
+    
+    private final ResidentInvitationRepository invitationRepository;
+    private final MeterReadingRepository meterReadingRepository;
+    private final InvoiceRepository invoiceRepository;
+    private final CommunityRepository communityRepository;
+    private final HouseholdRepository householdRepository;
+    
+    public ResidentInvitation inviteResident(ResidentInvitation invitation) {
+        invitation.setAccessCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        invitation.setStatus("PENDING");
+        return invitationRepository.save(invitation);
+    }
+    
+    public List<ResidentInvitation> getInvitations(String communityId) {
+        return invitationRepository.findByCommunityId(communityId);
+    }
+
+    public MeterReading saveMeterReading(MeterReading reading) {
+        reading.setReadingDate(LocalDate.now());
+        reading.setStatus("VERIFIED");
+        return meterReadingRepository.save(reading);
+    }
+
+    public List<MeterReading> getMeterReadings(String communityId) {
+        // Need to add findByCommunityId to repo, assuming Spring Data generates it
+        return meterReadingRepository.findAll().stream()
+                .filter(m -> communityId.equals(m.getCommunityId()))
+                .collect(Collectors.toList());
+    }
+
+    public MeterReading updateMeterReadingStatus(String readingId, String status) {
+        MeterReading reading = meterReadingRepository.findById(readingId)
+                .orElseThrow(() -> new RuntimeException("Meter reading not found"));
+        reading.setStatus(status);
+        if ("REJECTED".equals(status) || "VERIFIED".equals(status)) {
+            reading.setIsAnomaly(false); // Clear anomaly flag if action taken
+        }
+        return meterReadingRepository.save(reading);
+    }
+
+    public int bulkUploadMeters(String communityId, org.springframework.web.multipart.MultipartFile file) throws Exception {
+        int count = 0;
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(file.getInputStream()))) {
+            String line;
+            boolean isFirstLine = true;
+            while ((line = reader.readLine()) != null) {
+                if (isFirstLine) {
+                    isFirstLine = false; // skip header: flatNumber,readingValue,date
+                    continue;
+                }
+                String[] parts = line.split(",");
+                if (parts.length >= 3) {
+                    String flat = parts[0].trim();
+                    Double val = Double.parseDouble(parts[1].trim());
+                    LocalDate date = LocalDate.parse(parts[2].trim());
+                    
+                    // Dedupe logic: in a real app, query by flat and date to see if exists.
+                    // For now, assume it's clean and insert.
+                    MeterReading r = new MeterReading();
+                    r.setCommunityId(communityId);
+                    r.setFlatNumber(flat);
+                    r.setReadingValue(val);
+                    r.setReadingDate(date);
+                    r.setStatus("VERIFIED");
+                    meterReadingRepository.save(r);
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    public Community updateTariff(String communityId, Double tariffRate) {
+        Community c = communityRepository.findById(communityId)
+                .orElseThrow(() -> new RuntimeException("Community not found"));
+        c.setTariffRate(tariffRate);
+        return communityRepository.save(c);
+    }
+
+    public List<Invoice> generateInvoices(String communityId) {
+        Community c = communityRepository.findById(communityId)
+                .orElseThrow(() -> new RuntimeException("Community not found"));
+                
+        Double rate = c.getTariffRate() != null ? c.getTariffRate() : 0.0;
+        
+        List<MeterReading> readings = getMeterReadings(communityId);
+        
+        List<Invoice> newInvoices = readings.stream().map(reading -> {
+            Invoice inv = new Invoice();
+            inv.setCommunityId(communityId);
+            inv.setFlatNumber(reading.getFlatNumber());
+            inv.setAmount(reading.getReadingValue() * rate);
+            
+            LocalDate monthStart = LocalDate.now().withDayOfMonth(1);
+            LocalDate billingStart = monthStart;
+            
+            Household household = householdRepository.findByCommunityIdAndFlatNumber(communityId, reading.getFlatNumber());
+            if (household != null && household.getMoveInDate() != null) {
+                if (household.getMoveInDate().isAfter(monthStart) && !household.getMoveInDate().isAfter(LocalDate.now())) {
+                    billingStart = household.getMoveInDate();
+                }
+            }
+            
+            inv.setBillingPeriodStart(billingStart);
+            inv.setBillingPeriodEnd(LocalDate.now());
+            inv.setDueDate(LocalDate.now().plusDays(15));
+            inv.setStatus("UNPAID");
+            return inv;
+        }).collect(Collectors.toList());
+
+        return invoiceRepository.saveAll(newInvoices);
+    }
+
+    public List<Invoice> getInvoices(String communityId) {
+        return invoiceRepository.findAll().stream()
+                .filter(i -> communityId.equals(i.getCommunityId()))
+                .collect(Collectors.toList());
+    }
+
+    public Household updateUsageThreshold(String communityId, String flatNumber, Integer threshold) {
+        Household household = householdRepository.findByCommunityIdAndFlatNumber(communityId, flatNumber);
+        if (household == null) {
+            throw new RuntimeException("Household not found for community and flat number");
+        }
+        household.setWaterUsageThreshold(threshold);
+        return householdRepository.save(household);
+    }
+}

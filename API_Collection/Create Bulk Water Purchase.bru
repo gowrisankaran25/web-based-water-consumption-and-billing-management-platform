@@ -1,0 +1,21 @@
+meta {
+  name: Create Bulk Water Purchase
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/api/bulk-water-purchases
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "communityId": "COMM-1",
+    "volumeLiters": 10000.0,
+    "costINR": 5000.0,
+    "vendorName": "Local Water Tanker",
+    "purchaseDate": "2026-08-01"
+  }
+}

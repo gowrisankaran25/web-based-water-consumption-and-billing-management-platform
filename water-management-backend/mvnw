@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec powershell.exe -ExecutionPolicy Bypass -File "$(dirname "$0")/mvnw.ps1" "$@"
