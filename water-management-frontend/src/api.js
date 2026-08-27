@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: apiBaseUrl,
 });
 
 // Add a request interceptor to include the JWT token
@@ -26,6 +28,18 @@ export const authApi = {
   },
   getCommunities: async () => {
     const res = await api.get('/auth/communities');
+    return res.data;
+  },
+  forgotPassword: async (email) => {
+    const res = await api.post('/auth/forgot-password', { email });
+    return res.data;
+  },
+  forceReset: async (email, newPassword) => {
+    const res = await api.post('/auth/force-reset', { email, newPassword });
+    return res.data;
+  },
+  resetPassword: async (token, newPassword) => {
+    const res = await api.post('/auth/reset-password', { token, newPassword });
     return res.data;
   }
 };
@@ -52,6 +66,11 @@ export const communityAdminApi = {
   
   updateTariff: (communityId, tariffRate) => api.patch(`/communityadmin/tariff/${communityId}`, { tariffRate }).then(res => res.data),
   updateUsageThreshold: (communityId, flatNumber, waterUsageThreshold) => api.patch(`/communityadmin/threshold/${communityId}`, { flatNumber, waterUsageThreshold }).then(res => res.data),
+  
+  getHouseholds: async (communityId) => {
+    const res = await api.get(`/communityadmin/households/${communityId}`);
+    return res.data;
+  },
   
   generateInvoices: (communityId) => api.post(`/communityadmin/invoices/${communityId}`).then(res => res.data),
   getInvoices: (communityId) => api.get(`/communityadmin/invoices/${communityId}`).then(res => res.data),
@@ -102,3 +121,4 @@ export const invoiceApi = {
 };
 
 export default api;
+

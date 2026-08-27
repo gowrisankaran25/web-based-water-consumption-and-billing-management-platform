@@ -25,4 +25,7 @@ public class User {
     private String householdId; 
     
     private LocalDateTime createdAt = LocalDateTime.now();
+    
+    private String resetPasswordToken;
+    private LocalDateTime resetPasswordExpires;
 }

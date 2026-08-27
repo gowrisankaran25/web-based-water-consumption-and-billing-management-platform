@@ -1,0 +1,13 @@
+{
+  "name": "water-management-platform",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "water-management-frontend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace water-management-frontend",
+    "dev": "npm run dev --workspace water-management-frontend",
+    "lint": "npm run lint --workspace water-management-frontend"
+  }
+}

@@ -77,4 +77,9 @@ public class CommunityAdminController {
     public ResponseEntity<?> getInvoices(@PathVariable String communityId) {
         return ResponseEntity.ok(communityAdminService.getInvoices(communityId));
     }
+
+    @GetMapping("/households/{communityId}")
+    public ResponseEntity<?> getHouseholds(@PathVariable String communityId) {
+        return ResponseEntity.ok(communityAdminService.getHouseholds(communityId));
+    }
 }

@@ -5,6 +5,7 @@ import Register from './pages/auth/Register';
 import SuperAdminLogin from './pages/auth/SuperAdminLogin';
 import CommunityAdminLogin from './pages/auth/CommunityAdminLogin';
 import ResidentLogin from './pages/auth/ResidentLogin';
+import ResetPassword from './pages/auth/ResetPassword';
 import SuperAdminDashboard from './pages/dashboard/SuperAdmin';
 import CommunityAdminDashboard from './pages/dashboard/CommunityAdmin';
 import ResidentDashboard from './pages/dashboard/Resident';
@@ -20,6 +21,7 @@ function App() {
         <Route path="/superadmin-login" element={<SuperAdminLogin />} />
         <Route path="/communityadmin-login" element={<CommunityAdminLogin />} />
         <Route path="/resident-login" element={<ResidentLogin />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Dashboard Routes */}
         <Route path="/superadmin/*" element={<SuperAdminDashboard />} />

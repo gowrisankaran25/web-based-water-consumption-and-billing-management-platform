@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: water-management-backend
+    runtime: java
+    rootDir: water-management-backend
+    buildCommand: ./mvnw -q -DskipTests package
+    startCommand: java -jar target/water-management-backend-1.0.0.jar
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: MONGODB_URI
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+
+  - type: static
+    name: water-management-frontend
+    rootDir: water-management-frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://water-management-backend.onrender.com/api

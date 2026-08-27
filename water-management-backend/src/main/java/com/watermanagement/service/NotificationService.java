@@ -11,6 +11,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationService {
     private final NotificationMessageRepository notificationMessageRepository;
+    private final EmailService emailService;
 
     public NotificationMessage sendEmail(String communityId, String flatNumber, String email, String title, String message) {
         NotificationMessage notification = new NotificationMessage();
@@ -21,6 +22,9 @@ public class NotificationService {
         notification.setTitle(title);
         notification.setMessage(message);
         notification.setStatus("SENT");
+        
+        emailService.sendGenericEmail(email, title, message);
+        
         return notificationMessageRepository.save(notification);
     }
 

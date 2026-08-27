@@ -3,6 +3,40 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, Mail, Lock, ArrowRight, Server, Activity } from 'lucide-react';
 import { authApi } from '../../api';
 
+
+const Css3DNetworkBackground = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center opacity-40 z-0">
+    <div className="relative w-full h-full" style={{ perspective: '800px' }}>
+      <div 
+        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] -ml-[300px] -mt-[300px] rounded-full border border-slate-700"
+        style={{ transformStyle: 'preserve-3d', animation: 'spinGlobe 20s linear infinite' }}
+      >
+        <div className="absolute inset-0 rounded-full border border-indigo-500/50" style={{ transform: 'rotateX(45deg)' }}></div>
+        <div className="absolute inset-0 rounded-full border border-purple-500/50" style={{ transform: 'rotateX(-45deg)' }}></div>
+        <div className="absolute inset-0 rounded-full border border-sky-500/50" style={{ transform: 'rotateY(45deg)' }}></div>
+        <div className="absolute inset-0 rounded-full border border-blue-500/50" style={{ transform: 'rotateY(-45deg)' }}></div>
+        
+        {/* Nodes */}
+        {[...Array(12)].map((_, i) => (
+          <div 
+            key={i}
+            className="absolute w-4 h-4 bg-indigo-400 rounded-full shadow-[0_0_15px_#818cf8]"
+            style={{
+              top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
+              transform: `translateZ(${Math.random() * 200 - 100}px)`,
+              animation: 'pulseNode 2s infinite alternate'
+            }}
+          ></div>
+        ))}
+      </div>
+    </div>
+    <style>{`
+      @keyframes spinGlobe { 100% { transform: rotate3d(1, 1, 0, 360deg); } }
+      @keyframes pulseNode { 0% { opacity: 0.3; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
+    `}</style>
+  </div>
+);
+
 const SuperAdminLogin = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -151,3 +185,7 @@ const SuperAdminLogin = () => {
 };
 
 export default SuperAdminLogin;
+
+
+
+

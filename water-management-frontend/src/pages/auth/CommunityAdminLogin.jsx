@@ -3,6 +3,40 @@ import { useNavigate } from 'react-router-dom';
 import { Building2, Mail, Lock, ArrowRight, Droplet, Users } from 'lucide-react';
 import { authApi } from '../../api';
 
+const Css3DCityBackground = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center opacity-30 z-0 bg-slate-50">
+    <div className="relative w-full h-full" style={{ perspective: '1200px' }}>
+      <div 
+        className="absolute top-1/2 left-1/2 w-[800px] h-[800px] -ml-[400px] -mt-[400px]"
+        style={{ transform: 'rotateX(60deg) rotateZ(-45deg)', transformStyle: 'preserve-3d', animation: 'spinCity 40s linear infinite' }}
+      >
+        {[...Array(25)].map((_, i) => {
+          const x = (i % 5) * 120 + 100;
+          const y = Math.floor(i / 5) * 120 + 100;
+          const height = 40 + Math.random() * 120;
+          const delay = Math.random() * 5;
+          return (
+            <div 
+              key={i} 
+              className="absolute bg-teal-500/80 border-t border-l border-teal-300"
+              style={{ 
+                left: `${x}px`, top: `${y}px`, width: '60px', height: '60px', 
+                transform: `translateZ(${height/2}px) scaleZ(${height/60})`,
+                boxShadow: '20px 20px 30px rgba(0,0,0,0.2)',
+                animation: `pulseBuilding 4s ease-in-out infinite ${delay}s alternate`
+              }}
+            ></div>
+          );
+        })}
+      </div>
+    </div>
+    <style>{`
+      @keyframes spinCity { 100% { transform: rotateX(60deg) rotateZ(315deg); } }
+      @keyframes pulseBuilding { 0% { opacity: 0.5; } 100% { opacity: 1; transform: translateZ(60px) scaleZ(2); } }
+    `}</style>
+  </div>
+);
+
 const CommunityAdminLogin = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -36,17 +70,18 @@ const CommunityAdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center p-3 bg-teal-100 rounded-full mb-4 shadow-sm border border-teal-200">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans relative overflow-hidden">
+      <Css3DCityBackground />
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10 opacity-0 animate-fade-in-up">
+        <div className="inline-flex items-center justify-center p-3 bg-teal-100 rounded-full mb-4 shadow-sm border border-teal-200 animate-float-slow">
           <Building2 className="w-8 h-8 text-teal-600" />
         </div>
         <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Community Manager</h2>
         <p className="mt-2 text-sm text-slate-500 font-medium">Log in to manage your building's water network.</p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-2xl sm:px-10 border border-slate-100">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div className="bg-white py-8 px-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-2xl sm:px-10 border border-slate-100 opacity-0 animate-fade-in-delay">
           
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl font-medium flex items-center">
@@ -127,3 +162,5 @@ const CommunityAdminLogin = () => {
 };
 
 export default CommunityAdminLogin;
+
+

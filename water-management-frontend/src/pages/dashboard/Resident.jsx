@@ -5,7 +5,7 @@ import {
   Bell, Calendar, ArrowRight, CreditCard, Activity, AlertTriangle, Wrench, X, CheckCircle, Clock, ChevronDown, Download
 } from 'lucide-react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend 
 } from 'recharts';
 import { useRazorpay } from 'react-razorpay';
 import { communityAdminApi, paymentApi, ticketApi, notificationApi, invoiceApi } from '../../api';
@@ -22,6 +22,7 @@ const ModernResidentDashboard = () => {
   const [tickets, setTickets] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [meterReadings, setMeterReadings] = useState([]);
+  const [allMeterReadings, setAllMeterReadings] = useState([]);
   
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
@@ -188,7 +189,8 @@ const ModernResidentDashboard = () => {
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return {
         name: monthNames[date.getMonth()],
-        value: reading.readingValue
+        yourValue: reading.readingValue,
+        avgValue: parseFloat((allMeterReadings.filter(r => new Date(r.readingDate).getMonth() === date.getMonth()).reduce((a,b)=>a+b.readingValue,0) / (allMeterReadings.filter(r => new Date(r.readingDate).getMonth() === date.getMonth()).length || 1)).toFixed(1))
       };
     });
   };
@@ -382,7 +384,7 @@ const ModernResidentDashboard = () => {
                     <div>
                       <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Usage</div>
                       <div className="text-3xl font-extrabold text-slate-900">
-                        {getFilteredChartData().reduce((acc, curr) => acc + curr.value, 0)} <span className="text-lg text-slate-400">kL</span>
+                        {getFilteredChartData().reduce((acc, curr) => acc + (curr.yourValue || 0), 0).toFixed(1)} <span className="text-lg text-slate-400">kL</span>
                       </div>
                     </div>
                   </div>
@@ -429,9 +431,8 @@ const ModernResidentDashboard = () => {
                           <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 700 }} dy={12} />
                           <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 600 }} />
                           <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '16px', border: 'none', backgroundColor: '#fff', color: '#0f172a', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)', padding: '12px 20px' }} />
-                          <Bar dataKey="value" radius={[8, 8, 8, 8]} label={renderCustomBarLabel}>
-                            {getFilteredChartData().map((entry, index) => <Cell key={`cell-${index}`} fill="url(#colorUv)" />)}
-                          </Bar>
+                          <Legend verticalAlign="top" height={36}/><Bar dataKey="yourValue" name="Your Usage" fill="#6366f1" radius={[4, 4, 0, 0]} />
+<Bar dataKey="avgValue" name="Community Avg" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
                           <defs>
                             <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#8B5CF6" stopOpacity={1}/>
@@ -543,9 +544,8 @@ const ModernResidentDashboard = () => {
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 700 }} dy={12} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 600 }} />
                       <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '16px', border: 'none', backgroundColor: '#fff', color: '#0f172a', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)', padding: '12px 20px' }} />
-                      <Bar dataKey="value" radius={[8, 8, 8, 8]} label={renderCustomBarLabel}>
-                        {getFilteredChartData().map((entry, index) => <Cell key={`cell-${index}`} fill="url(#colorUv)" />)}
-                      </Bar>
+                      <Legend verticalAlign="top" height={36}/><Bar dataKey="yourValue" name="Your Usage" fill="#6366f1" radius={[4, 4, 0, 0]} />
+<Bar dataKey="avgValue" name="Community Avg" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
                       <defs>
                         <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#8B5CF6" stopOpacity={1}/>
@@ -717,3 +717,4 @@ const ModernResidentDashboard = () => {
 };
 
 export default ModernResidentDashboard;
+

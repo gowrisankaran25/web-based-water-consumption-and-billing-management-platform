@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Component
+@org.springframework.context.annotation.Profile("!test")
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
@@ -56,7 +57,7 @@ public class DataSeeder implements CommandLineRunner {
             c1.setAdminEmail("sarah@greenvalley.com");
             c1.setTotalFlats(150);
             c1.setStatus("APPROVED");
-            communityRepository.save(c1);
+            c1 = communityRepository.save(c1);
 
             com.watermanagement.model.Community c2 = new com.watermanagement.model.Community();
             c2.setName("Oceanview Apartments");
@@ -64,7 +65,7 @@ public class DataSeeder implements CommandLineRunner {
             c2.setAdminEmail("mike@oceanview.com");
             c2.setTotalFlats(80);
             c2.setStatus("PENDING");
-            communityRepository.save(c2);
+            c2 = communityRepository.save(c2);
 
             com.watermanagement.model.Community c3 = new com.watermanagement.model.Community();
             c3.setName("Pine Hill Residences");
@@ -72,7 +73,7 @@ public class DataSeeder implements CommandLineRunner {
             c3.setAdminEmail("jessica@pinehill.com");
             c3.setTotalFlats(200);
             c3.setStatus("APPROVED");
-            communityRepository.save(c3);
+            c3 = communityRepository.save(c3);
 
             // Add Admins for these communities
             if (userRepository.findByUsername("sarah@greenvalley.com").isEmpty()) {
@@ -82,6 +83,15 @@ public class DataSeeder implements CommandLineRunner {
                 u2.setRole("COMMUNITY_ADMIN");
                 u2.setCommunityId(c1.getId());
                 userRepository.save(u2);
+            }
+            if (userRepository.findByUsername("mike@oceanview.com").isEmpty()) {
+                User u3 = new User();
+                u3.setUsername("mike@oceanview.com");
+                u3.setPassword(passwordEncoder.encode("password123"));
+                u3.setRole("COMMUNITY_ADMIN");
+                u3.setCommunityId(c2.getId());
+                userRepository.save(u3);
+                System.out.println("Seeded Oceanview Admin: mike@oceanview.com / password123");
             }
 
             // --- Seed Households for Green Valley ---
@@ -163,5 +173,33 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(tech);
             System.out.println("Seeded Field Tech account: tech@watermanagement.com / tech123");
         }
+        // Ensure Oceanview Admin exists
+        Optional<com.watermanagement.model.Community> oceanviewOpt = communityRepository.findAll().stream()
+                .filter(c -> "Oceanview Apartments".equals(c.getName()))
+                .findFirst();
+        
+        if (oceanviewOpt.isPresent() && userRepository.findByUsername("mike@oceanview.com").isEmpty()) {
+            User u3 = new User();
+            u3.setUsername("mike@oceanview.com");
+            u3.setPassword(passwordEncoder.encode("password123"));
+            u3.setRole("COMMUNITY_ADMIN");
+            u3.setCommunityId(oceanviewOpt.get().getId());
+            userRepository.save(u3);
+            System.out.println("Seeded Oceanview Admin (Post-init): mike@oceanview.com / password123");
+        }
+
+        // Force reset passwords for debugging
+        userRepository.findByUsername("gowrrisankaran79@gmail.com").ifPresent(u -> {
+            u.setPassword(passwordEncoder.encode("password123"));
+            userRepository.save(u);
+            System.out.println("Force reset password for gowrrisankaran79@gmail.com to: password123");
+        });
+        userRepository.findByUsername("resident@greenvalley.com").ifPresent(u -> {
+            u.setPassword(passwordEncoder.encode("password123"));
+            userRepository.save(u);
+            System.out.println("Force reset password for resident@greenvalley.com to: password123");
+        });
     }
 }
+
+

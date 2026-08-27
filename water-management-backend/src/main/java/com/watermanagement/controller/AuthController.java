@@ -53,8 +53,19 @@ public class AuthController {
             String jwt = jwtUtils.generateJwtToken(authentication);
 
             User user = userRepository.findByUsername(loginRequest.getUsername()).orElseThrow();
+            
+            String flatNumber = null;
+            String residentName = null;
+            
+            if ("RESIDENT".equals(user.getRole()) && user.getHouseholdId() != null) {
+                java.util.Optional<Household> householdOpt = householdRepository.findById(user.getHouseholdId());
+                if (householdOpt.isPresent()) {
+                    flatNumber = householdOpt.get().getFlatNumber();
+                    residentName = householdOpt.get().getResidentName();
+                }
+            }
 
-            return ResponseEntity.ok(new JwtResponse(jwt, user.getId(), user.getUsername(), user.getRole(), user.getCommunityId(), user.getHouseholdId()));
+            return ResponseEntity.ok(new JwtResponse(jwt, user.getId(), user.getUsername(), user.getRole(), user.getCommunityId(), user.getHouseholdId(), flatNumber, residentName));
         } catch (org.springframework.security.core.AuthenticationException e) {
             return ResponseEntity.status(401).body(new MessageResponse("Error: Invalid username or password"));
         }
@@ -106,6 +117,57 @@ public class AuthController {
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        java.util.Optional<User> userOpt = userRepository.findByUsername(request.getEmail());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found with this email."));
+        }
+        
+        User user = userOpt.get();
+        String token = java.util.UUID.randomUUID().toString();
+        user.setResetPasswordToken(token);
+        user.setResetPasswordExpires(java.time.LocalDateTime.now().plusHours(1));
+        userRepository.save(user);
+        
+        // Use a mock email service logic or just return success for now.
+        // In a real application, you would email this link:
+        String resetLink = "http://localhost:5173/reset-password?token=" + token;
+        System.out.println("Password reset link for " + request.getEmail() + ": " + resetLink);
+        
+        // Returning the link in the message for testing/development purposes
+        return ResponseEntity.ok(new MessageResponse("Password reset instructions sent. DEV MODE: Click this link to reset: " + resetLink));
+    }
+
+    @PostMapping("/force-reset")
+    public ResponseEntity<?> forceResetPassword(@RequestBody ForceResetRequest request) {
+        java.util.Optional<User> userOpt = userRepository.findByUsername(request.getEmail());
+        if (userOpt.isEmpty()) return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found."));
+        User user = userOpt.get();
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        return ResponseEntity.ok(new MessageResponse("Password successfully reset."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        java.util.Optional<User> userOpt = userRepository.findByResetPasswordToken(request.getToken());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid or expired reset token."));
+        }
+        
+        User user = userOpt.get();
+        if (user.getResetPasswordExpires().isBefore(java.time.LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Token has expired."));
+        }
+        
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setResetPasswordToken(null);
+        user.setResetPasswordExpires(null);
+        userRepository.save(user);
+        
+        return ResponseEntity.ok(new MessageResponse("Password successfully reset. You can now log in."));
+    }
 }
 
 @Data
@@ -142,6 +204,25 @@ class LoginRequest {
 }
 
 @Data
+class ForgotPasswordRequest {
+    private String email;
+}
+
+@Data
+class ForceResetRequest {
+    private String email;
+    private String newPassword;
+    public String getEmail() { return email; }
+    public String getNewPassword() { return newPassword; }
+}
+
+@Data
+class ResetPasswordRequest {
+    private String token;
+    private String newPassword;
+}
+
+@Data
 class JwtResponse {
     private String token;
     private String type = "Bearer";
@@ -150,6 +231,8 @@ class JwtResponse {
     private String role;
     private String communityId;
     private String householdId;
+    private String flatNumber;
+    private String residentName;
 
     public JwtResponse(String token, String id, String username, String role, String communityId, String householdId) {
         this.token = token;
@@ -159,4 +242,16 @@ class JwtResponse {
         this.communityId = communityId;
         this.householdId = householdId;
     }
+    
+    public JwtResponse(String token, String id, String username, String role, String communityId, String householdId, String flatNumber, String residentName) {
+        this.token = token;
+        this.id = id;
+        this.username = username;
+        this.role = role;
+        this.communityId = communityId;
+        this.householdId = householdId;
+        this.flatNumber = flatNumber;
+        this.residentName = residentName;
+    }
 }
+

@@ -7,7 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell 
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import { communityAdminApi, invoiceApi } from '../../api';
+import { communityAdminApi, invoiceApi, bulkWaterPurchaseApi } from '../../api';
 import TariffPlan from './TariffPlan';
 
 // Fetch dynamic community ID from logged-in user
@@ -21,6 +21,8 @@ const AquaTrackDashboard = () => {
   const [meterReadings, setMeterReadings] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [invitations, setInvitations] = useState([]);
+  const [bulkPurchases, setBulkPurchases] = useState([]);
+  const [households, setHouseholds] = useState([]);
   
   // Form States
   const [mFlatNumber, setMFlatNumber] = useState('');
@@ -30,6 +32,12 @@ const AquaTrackDashboard = () => {
   const [rFlatNumber, setRFlatNumber] = useState('');
   const [residentEmail, setResidentEmail] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Bulk Purchase Form States (Pre-filled with mock data)
+  const [bpVolumeLiters, setBpVolumeLiters] = useState('15000');
+  const [bpCostINR, setBpCostINR] = useState('2500');
+  const [bpVendorName, setBpVendorName] = useState('AquaTankers Inc');
+  const [bpPurchaseDate, setBpPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Get dynamic Community ID from login session
   const communityId = localStorage.getItem('communityId');
@@ -40,6 +48,8 @@ const AquaTrackDashboard = () => {
     communityAdminApi.getMeterReadings(communityId).then(setMeterReadings).catch(console.error);
     communityAdminApi.getInvoices(communityId).then(setInvoices).catch(console.error);
     communityAdminApi.getInvitations(communityId).then(setInvitations).catch(console.error);
+    bulkWaterPurchaseApi.getByCommunity(communityId).then(setBulkPurchases).catch(console.error);
+    communityAdminApi.getHouseholds(communityId).then(setHouseholds).catch(console.error);
   };
 
   useEffect(() => {
@@ -117,6 +127,21 @@ const AquaTrackDashboard = () => {
     }).catch(err => alert('Failed: ' + err.message));
   };
 
+  const handleBulkPurchaseSubmit = (e) => {
+    e.preventDefault();
+    bulkWaterPurchaseApi.create({
+      communityId,
+      volumeLiters: parseFloat(bpVolumeLiters),
+      costINR: parseFloat(bpCostINR),
+      vendorName: bpVendorName,
+      purchaseDate: bpPurchaseDate
+    }).then(() => {
+      setBpVolumeLiters(''); setBpCostINR(''); setBpVendorName(''); setBpPurchaseDate('');
+      fetchData();
+      alert('Bulk Purchase Logged!');
+    }).catch(err => alert('Failed: ' + err.message));
+  };
+
   const handleMeterAction = (readingId, status) => {
     communityAdminApi.updateMeterStatus(readingId, status)
       .then(() => {
@@ -177,6 +202,7 @@ const AquaTrackDashboard = () => {
           <NavItem id="billing" icon={RefreshCw} label="Billing Cycles" />
           <NavItem id="settings" icon={Settings} label="Tariff Plan" />
           <NavItem id="invoices" icon={FileText} label="Invoices" />
+          <NavItem id="bulk" icon={Droplet} label="Bulk Purchases" />
           <NavItem id="exceptions" icon={AlertTriangle} label="Exception Queue" />
           <NavItem id="analytics" icon={Activity} label="NRW Analytics" />
         </nav>
@@ -418,30 +444,120 @@ const AquaTrackDashboard = () => {
             </div>
           ) : null}
 
-          {/* HOUSEHOLDS TAB (Invitations) */}
+          {/* HOUSEHOLDS TAB (Invitations & Directory) */}
           {activeTab === 'households' && (
-            <div className="bg-white p-8 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-50 max-w-xl">
-              <h2 className="text-xl font-bold mb-6">Invite Resident / Register Household</h2>
-              <form onSubmit={handleInvite} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Resident Name</label>
-                  <input type="text" value={residentName} onChange={e => setResidentName(e.target.value)} required className="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-purple-500" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Flat / Unit Number</label>
-                  <input type="text" value={rFlatNumber} onChange={e => setRFlatNumber(e.target.value)} required className="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-purple-500" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
-                  <input type="email" value={residentEmail} onChange={e => setResidentEmail(e.target.value)} required className="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-purple-500" />
-                </div>
-                <button type="submit" className="w-full py-3 bg-purple-600 text-white text-sm font-bold rounded-xl hover:bg-purple-700 transition">
-                  Generate Invite Code
-                </button>
-              </form>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="bg-white p-8 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-50">
+                <h2 className="text-xl font-bold mb-6">Invite Resident / Register Household</h2>
+                <form onSubmit={handleInvite} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Resident Name</label>
+                    <input type="text" value={residentName} onChange={e => setResidentName(e.target.value)} required className="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-purple-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Flat / Unit Number</label>
+                    <input type="text" value={rFlatNumber} onChange={e => setRFlatNumber(e.target.value)} required className="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-purple-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+                    <input type="email" value={residentEmail} onChange={e => setResidentEmail(e.target.value)} required className="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-purple-500" />
+                  </div>
+                  <button type="submit" className="w-full py-3 bg-purple-600 text-white text-sm font-bold rounded-xl hover:bg-purple-700 transition">
+                    Generate Invite Code
+                  </button>
+                </form>
+              </div>
+
+              <div className="bg-white p-8 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-50">
+                <h2 className="text-xl font-bold mb-6">Registered Households Directory</h2>
+                {households && households.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-100">
+                          <th className="py-4 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Flat</th>
+                          <th className="py-4 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Name</th>
+                          <th className="py-4 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Email</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-sm">
+                        {households.map((h, idx) => (
+                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50">
+                            <td className="py-4 px-4 font-bold text-slate-700">{h.flatNumber}</td>
+                            <td className="py-4 px-4 text-slate-600 font-medium">{h.residentName}</td>
+                            <td className="py-4 px-4 text-slate-500">{h.residentEmail}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-slate-500 text-sm">No households found.</p>
+                )}
+              </div>
             </div>
           )}
           
+          {/* BULK PURCHASES TAB */}
+          {activeTab === 'bulk' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="bg-white p-8 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-50">
+                <h2 className="text-xl font-bold mb-6">Log Bulk Water Purchase</h2>
+                <form onSubmit={handleBulkPurchaseSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Volume (Liters)</label>
+                    <input type="number" step="0.01" value={bpVolumeLiters} onChange={e => setBpVolumeLiters(e.target.value)} required className="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-purple-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Total Cost (₹)</label>
+                    <input type="number" step="0.01" value={bpCostINR} onChange={e => setBpCostINR(e.target.value)} required className="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-purple-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Vendor Name</label>
+                    <input type="text" value={bpVendorName} onChange={e => setBpVendorName(e.target.value)} required className="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-purple-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Purchase Date</label>
+                    <input type="date" value={bpPurchaseDate} onChange={e => setBpPurchaseDate(e.target.value)} required className="w-full p-3 text-sm border border-slate-200 rounded-xl focus:outline-purple-500" />
+                  </div>
+                  <button type="submit" className="w-full py-3 bg-purple-600 text-white text-sm font-bold rounded-xl hover:bg-purple-700 transition mt-2">
+                    Record Purchase
+                  </button>
+                </form>
+              </div>
+              
+              <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-50 overflow-hidden">
+                <div className="p-6 border-b border-slate-50">
+                  <h2 className="text-lg font-bold text-slate-900 tracking-tight">Recent Purchases</h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50/50">
+                      <tr>
+                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Date</th>
+                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Vendor</th>
+                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Volume (L)</th>
+                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Cost (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {bulkPurchases.length === 0 ? (
+                        <tr><td colSpan="4" className="px-6 py-4 text-center italic text-slate-400">No bulk purchases recorded.</td></tr>
+                      ) : bulkPurchases.map(bp => (
+                        <tr key={bp.id} className="hover:bg-slate-50/50">
+                          <td className="px-6 py-4 text-slate-500">{bp.purchaseDate}</td>
+                          <td className="px-6 py-4 font-semibold text-slate-800">{bp.vendorName}</td>
+                          <td className="px-6 py-4 font-bold text-slate-600">{bp.volumeLiters} L</td>
+                          <td className="px-6 py-4 font-bold text-green-600">₹{bp.costINR.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* EXCEPTION QUEUE TAB */}
           {activeTab === 'exceptions' && (
             <div>

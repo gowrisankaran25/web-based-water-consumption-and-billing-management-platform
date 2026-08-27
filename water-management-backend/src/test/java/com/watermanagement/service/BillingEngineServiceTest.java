@@ -33,6 +33,7 @@ class BillingEngineServiceTest {
                 "A-101",
                 15.0,
                 plan,
+                0.0,
                 LocalDate.of(2026, 8, 1),
                 LocalDate.of(2026, 8, 31)
         );
@@ -63,6 +64,7 @@ class BillingEngineServiceTest {
                 "A-102",
                 40.0, // 10KL + 20KL + 10KL
                 plan,
+                0.0,
                 LocalDate.of(2026, 8, 1),
                 LocalDate.of(2026, 8, 31)
         );
@@ -84,6 +86,7 @@ class BillingEngineServiceTest {
                 "A-103",
                 0.0,
                 plan,
+                0.0,
                 LocalDate.of(2026, 8, 1),
                 LocalDate.of(2026, 8, 31)
         );
@@ -93,29 +96,20 @@ class BillingEngineServiceTest {
     }
 
     @Test
-    void shouldEstimateUnmeteredHouseholdConsumptionFromArea() {
-        Household household = new Household();
-        household.setFlatAreaSqFt(1200.0);
-        household.setOccupants(4);
-
-        double estimate = billingEngineService.calculateEstimatedConsumptionForHousehold(household, 0.03, 3.2);
-
-        assertTrue(estimate > 0);
-        assertEquals(36.0, estimate, 0.01);
-    }
-
-    @Test
-    void shouldDistributeConsumptionByAreaWithFallback() {
-        Household h1 = new Household(); h1.setFlatAreaSqFt(1000.0);
-        Household h2 = new Household(); h2.setFlatAreaSqFt(1500.0);
+    void shouldApportionBulkWaterCost() {
+        Household h1 = new Household(); h1.setFlatNumber("A-1"); h1.setFlatAreaSqFt(1000.0);
+        Household h2 = new Household(); h2.setFlatNumber("A-2"); h2.setFlatAreaSqFt(1500.0);
         List<Household> households = List.of(h1, h2);
         
-        double totalDistributed = billingEngineService.distributeConsumptionByArea(households, 50.0, 0.01, 1.0);
+        java.util.Map<String, Double> metered = new java.util.HashMap<>();
+        metered.put("A-1", 100.0); // metered gets 100kL
+        // A-2 is unmetered, estimated volume is 1500 * 0.1 = 150.0 kL
+        // Total volume = 250.0
+        // unit cost = 500.0 / 250.0 = 2.0
         
-        // Total Area = 2500
-        // h1 = 1000 / 2500 * 50 = 20.0 (Fallback: 1000 * 0.01 = 10.0 -> max(20, 10) = 20)
-        // h2 = 1500 / 2500 * 50 = 30.0 (Fallback: 1500 * 0.01 = 15.0 -> max(30, 15) = 30)
-        // Total = 50.0
-        assertEquals(50.0, totalDistributed, 0.01);
+        java.util.Map<String, Double> apportioned = billingEngineService.apportionBulkWaterCosts(households, metered, 500.0);
+        
+        assertEquals(200.0, apportioned.get("A-1"), 0.01); // 100 * 2.0
+        assertEquals(300.0, apportioned.get("A-2"), 0.01); // 150 * 2.0
     }
 }

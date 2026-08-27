@@ -15,6 +15,7 @@
     "autoprefixer": "^10.5.4",
     "axios": "^1.19.0",
     "lucide-react": "^1.28.0",
+    "mongodb": "^7.6.0",
     "postcss": "^8.5.25",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

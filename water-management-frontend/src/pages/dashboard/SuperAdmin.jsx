@@ -76,6 +76,11 @@ const SuperAdminDashboard = () => {
   // --- Derived Metrics ---
   const totalRevenue = invoices.filter(i => i.status === 'PAID').reduce((sum, i) => sum + i.amount, 0);
   const activeAlerts = tickets.filter(t => t.status !== 'RESOLVED');
+  const getCommunityName = (communityId) => {
+    if (!communityId) return 'Unknown';
+    const comm = communities.find(c => c.id === communityId);
+    return comm ? comm.name : (communityId.startsWith('COMM') ? communityId : communityId.substring(0,8));
+  };
   const pendingComms = communities.filter(c => c.status === 'PENDING');
   
   // Chart Data
@@ -361,7 +366,7 @@ const SuperAdminDashboard = () => {
                       ) : (
                         tickets.map((t, i) => (
                           <tr key={t.id || i} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-5 font-semibold text-slate-500">{t.communityId?.substring(0,8)}</td>
+                            <td className="px-6 py-5 font-semibold text-slate-500">{getCommunityName(t.communityId)}</td>
                             <td className="px-6 py-5 font-bold text-slate-900">{t.flatNumber}</td>
                             <td className="px-6 py-5 font-bold text-rose-500">{t.issueType}</td>
                             <td className="px-6 py-5 text-slate-600 font-medium">{t.description}</td>
@@ -591,3 +596,4 @@ const SuperAdminDashboard = () => {
 };
 
 export default SuperAdminDashboard;
+

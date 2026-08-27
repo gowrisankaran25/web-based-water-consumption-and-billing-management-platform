@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@org.springframework.test.context.ActiveProfiles("test")
 public class BillingWorkflowIntegrationTest {
 
     @MockBean
@@ -93,6 +94,7 @@ public class BillingWorkflowIntegrationTest {
                 h1.getFlatNumber(), 
                 reading1.getReadingValue(), 
                 plan, 
+                0.0,
                 openedCycle.getStartDate(), 
                 openedCycle.getEndDate()
         );
@@ -114,3 +116,4 @@ public class BillingWorkflowIntegrationTest {
         assertEquals("FINALIZED", finalizedCycle.getStatus());
     }
 }
+
