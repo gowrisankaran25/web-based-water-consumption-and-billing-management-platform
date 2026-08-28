@@ -1,9 +1,12 @@
 package com.watermanagement.config;
 
 import com.watermanagement.model.User;
+import com.watermanagement.model.MeterReading;
+import com.watermanagement.model.BulkWaterPurchase;
 import com.watermanagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -12,8 +15,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Component
-@org.springframework.context.annotation.Profile("!test")
 @RequiredArgsConstructor
+@Profile("!test")
 public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
@@ -22,19 +25,20 @@ public class DataSeeder implements CommandLineRunner {
     private final com.watermanagement.repository.HouseholdRepository householdRepository;
     private final com.watermanagement.repository.InvoiceRepository invoiceRepository;
     private final com.watermanagement.repository.ServiceTicketRepository serviceTicketRepository;
+    private final com.watermanagement.repository.MeterReadingRepository meterReadingRepository;
+    private final com.watermanagement.repository.BulkWaterPurchaseRepository bulkWaterPurchaseRepository;
 
     @Override
     public void run(String... args) throws Exception {
         // Seed Super Admin if none exists
         Optional<User> superAdminOpt = userRepository.findByUsername("admin@watermanagement.com");
-        
         if (superAdminOpt.isEmpty()) {
-            User admin = new User();
-            admin.setUsername("admin@watermanagement.com");
-            admin.setPassword(passwordEncoder.encode("superadmin123"));
-            admin.setRole("SUPER_ADMIN");
-            userRepository.save(admin);
-            System.out.println("Seeded SuperAdmin account: admin@watermanagement.com / superadmin123");
+            User superAdmin = new User();
+            superAdmin.setUsername("admin@watermanagement.com");
+            superAdmin.setPassword(passwordEncoder.encode("admin123"));
+            superAdmin.setRole("SUPER_ADMIN");
+            userRepository.save(superAdmin);
+            System.out.println("Seeded SuperAdmin account: admin@watermanagement.com / admin123");
         }
 
         // Seed user's personal email
@@ -112,6 +116,15 @@ public class DataSeeder implements CommandLineRunner {
             h2.setWaterUsageThreshold(30);
             h2.setDisconnectionStatus(false);
             householdRepository.save(h2);
+            
+            com.watermanagement.model.Household h3 = new com.watermanagement.model.Household();
+            h3.setCommunityId(c1.getId());
+            h3.setFlatNumber("H-105");
+            h3.setResidentName("Alice Wonderland");
+            h3.setResidentEmail("alice@greenvalley.com");
+            h3.setWaterUsageThreshold(35);
+            h3.setDisconnectionStatus(false);
+            householdRepository.save(h3);
 
             // Add Resident User for H-101
             if (userRepository.findByUsername("resident@greenvalley.com").isEmpty()) {
@@ -129,9 +142,9 @@ public class DataSeeder implements CommandLineRunner {
             inv1.setFlatNumber("H-101");
             inv1.setAmount(450.50);
             inv1.setStatus("PAID");
-            inv1.setBillingPeriodStart(LocalDate.parse("2026-05-01"));
-            inv1.setBillingPeriodEnd(LocalDate.parse("2026-05-31"));
-            inv1.setDueDate(LocalDate.parse("2026-06-15"));
+            inv1.setBillingPeriodStart(LocalDate.now().minusMonths(2).withDayOfMonth(1));
+            inv1.setBillingPeriodEnd(LocalDate.now().minusMonths(2).withDayOfMonth(28));
+            inv1.setDueDate(LocalDate.now().minusMonths(1).withDayOfMonth(15));
             invoiceRepository.save(inv1);
 
             com.watermanagement.model.Invoice inv2 = new com.watermanagement.model.Invoice();
@@ -139,9 +152,9 @@ public class DataSeeder implements CommandLineRunner {
             inv2.setFlatNumber("H-101");
             inv2.setAmount(850.00);
             inv2.setStatus("PENDING");
-            inv2.setBillingPeriodStart(LocalDate.parse("2026-06-01"));
-            inv2.setBillingPeriodEnd(LocalDate.parse("2026-06-30"));
-            inv2.setDueDate(LocalDate.parse("2026-07-15"));
+            inv2.setBillingPeriodStart(LocalDate.now().minusMonths(1).withDayOfMonth(1));
+            inv2.setBillingPeriodEnd(LocalDate.now().minusMonths(1).withDayOfMonth(28));
+            inv2.setDueDate(LocalDate.now().withDayOfMonth(15));
             invoiceRepository.save(inv2);
 
             // --- Seed Service Tickets ---
@@ -162,6 +175,69 @@ public class DataSeeder implements CommandLineRunner {
             t2.setStatus("RESOLVED");
             t2.setCreatedAt(LocalDateTime.now().minusDays(2));
             serviceTicketRepository.save(t2);
+            
+            // --- Seed Meter Readings (Normal and Anomalies) ---
+            if (meterReadingRepository.count() == 0) {
+                // Normal usage for H-101
+                MeterReading m1 = new MeterReading();
+                m1.setCommunityId(c1.getId());
+                m1.setFlatNumber("H-101");
+                m1.setReadingValue(250.5);
+                m1.setReadingDate(LocalDate.now().minusDays(5));
+                m1.setStatus("VERIFIED");
+                m1.setIsAnomaly(false);
+                m1.setSource("IOT_SMART_METER");
+                meterReadingRepository.save(m1);
+                
+                // Normal usage for H-102
+                MeterReading m2 = new MeterReading();
+                m2.setCommunityId(c1.getId());
+                m2.setFlatNumber("H-102");
+                m2.setReadingValue(300.0);
+                m2.setReadingDate(LocalDate.now().minusDays(5));
+                m2.setStatus("VERIFIED");
+                m2.setIsAnomaly(false);
+                m2.setSource("IOT_SMART_METER");
+                meterReadingRepository.save(m2);
+
+                // Anomaly Spike for H-101
+                MeterReading m3 = new MeterReading();
+                m3.setCommunityId(c1.getId());
+                m3.setFlatNumber("H-101");
+                m3.setReadingValue(5000.5);
+                m3.setReadingDate(LocalDate.now());
+                m3.setStatus("PENDING_REVIEW");
+                m3.setIsAnomaly(true);
+                m3.setAnomalyReason("Usage spiked by 450% compared to last month");
+                m3.setSource("IOT_SMART_METER");
+                meterReadingRepository.save(m3);
+
+                // Anomaly Negative for H-105
+                MeterReading m4 = new MeterReading();
+                m4.setCommunityId(c1.getId());
+                m4.setFlatNumber("H-105");
+                m4.setReadingValue(-15.0);
+                m4.setReadingDate(LocalDate.now().minusDays(1));
+                m4.setStatus("PENDING_REVIEW");
+                m4.setIsAnomaly(true);
+                m4.setAnomalyReason("Negative consumption detected (Meter Rollback?)");
+                m4.setSource("IOT_SMART_METER");
+                meterReadingRepository.save(m4);
+                
+                System.out.println("Seeded Meter Readings and Anomalies.");
+            }
+            
+            // --- Seed Bulk Water Purchases ---
+            if (bulkWaterPurchaseRepository.count() == 0) {
+                BulkWaterPurchase bwp1 = new BulkWaterPurchase();
+                bwp1.setCommunityId(c1.getId());
+                bwp1.setQuantityLiters(10000.0);
+                bwp1.setTotalCost(1500.0);
+                bwp1.setPurchaseDate(LocalDate.now().minusDays(10));
+                bwp1.setInvoiceReference("INV-BWP-1001");
+                bulkWaterPurchaseRepository.save(bwp1);
+                System.out.println("Seeded Bulk Water Purchases.");
+            }
         }
 
         // Seed Field Tech User
@@ -173,6 +249,7 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(tech);
             System.out.println("Seeded Field Tech account: tech@watermanagement.com / tech123");
         }
+        
         // Ensure Oceanview Admin exists
         Optional<com.watermanagement.model.Community> oceanviewOpt = communityRepository.findAll().stream()
                 .filter(c -> "Oceanview Apartments".equals(c.getName()))
@@ -201,5 +278,3 @@ public class DataSeeder implements CommandLineRunner {
         });
     }
 }
-
-
