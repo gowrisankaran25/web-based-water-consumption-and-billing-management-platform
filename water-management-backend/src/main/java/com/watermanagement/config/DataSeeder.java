@@ -176,8 +176,12 @@ public class DataSeeder implements CommandLineRunner {
             t2.setCreatedAt(LocalDateTime.now().minusDays(2));
             serviceTicketRepository.save(t2);
             
-            // --- Seed Meter Readings (Normal and Anomalies) ---
-            if (meterReadingRepository.count() == 0) {
+        }
+
+        // --- Seed Meter Readings (Normal and Anomalies) ---
+        if (meterReadingRepository.count() == 0) {
+            com.watermanagement.model.Community c1 = communityRepository.findAll().stream().filter(c -> "Green Valley Estates".equals(c.getName())).findFirst().orElse(null);
+            if (c1 != null) {
                 // Normal usage for H-101
                 MeterReading m1 = new MeterReading();
                 m1.setCommunityId(c1.getId());
@@ -226,15 +230,18 @@ public class DataSeeder implements CommandLineRunner {
                 
                 System.out.println("Seeded Meter Readings and Anomalies.");
             }
-            
-            // --- Seed Bulk Water Purchases ---
-            if (bulkWaterPurchaseRepository.count() == 0) {
+        }
+
+        // --- Seed Bulk Water Purchases ---
+        if (bulkWaterPurchaseRepository.count() == 0) {
+            com.watermanagement.model.Community c1 = communityRepository.findAll().stream().filter(c -> "Green Valley Estates".equals(c.getName())).findFirst().orElse(null);
+            if (c1 != null) {
                 BulkWaterPurchase bwp1 = new BulkWaterPurchase();
                 bwp1.setCommunityId(c1.getId());
-                bwp1.setQuantityLiters(10000.0);
-                bwp1.setTotalCost(1500.0);
+                bwp1.setVolumeLiters(10000.0);
+                bwp1.setCostINR(1500.0);
                 bwp1.setPurchaseDate(LocalDate.now().minusDays(10));
-                bwp1.setInvoiceReference("INV-BWP-1001");
+                bwp1.setVendorName("City Water Board");
                 bulkWaterPurchaseRepository.save(bwp1);
                 System.out.println("Seeded Bulk Water Purchases.");
             }
@@ -278,3 +285,5 @@ public class DataSeeder implements CommandLineRunner {
         });
     }
 }
+
+
