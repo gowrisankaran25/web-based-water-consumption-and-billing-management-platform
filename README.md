@@ -101,11 +101,9 @@ This can be adjusted in:
 - `water-management-backend/src/main/resources/application.properties`
 
 ## Notes
-
 - The project uses JWT-based authentication for secure user access.
 - Payment configuration is currently configured in the backend properties file.
 - The frontend and backend need to run together for the full application experience.
 
 ## License
-
 This project is under Apache 2.0 license
