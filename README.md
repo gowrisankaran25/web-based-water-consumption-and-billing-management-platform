@@ -32,7 +32,6 @@ It supports end-to-end management of water consumption and billing operations in
 - React Router DOM
 - Axios
 - Recharts
-
 ### Backend
 - Java 24
 - Spring Boot 3.5
