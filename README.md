@@ -13,7 +13,6 @@ This platform is designed for multiple user roles and billing workflows, includi
 It supports end-to-end management of water consumption and billing operations in a community or utility environment.
 
 ## Key Features
-
 - Role-based authentication and access control
 - Tariff plan management
 - Open and finalize billing cycles
