@@ -25,7 +25,6 @@ It supports end-to-end management of water consumption and billing operations in
 - Swagger API documentation
 
 ## Tech Stack
-
 ### Frontend
 - React
 - Vite
