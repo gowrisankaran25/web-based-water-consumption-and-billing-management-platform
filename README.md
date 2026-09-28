@@ -21,7 +21,7 @@ It supports end-to-end management of water consumption and billing operations in
 - Payment integration with Razorpay
 - Service ticket handling
 - Notifications and communication support
-- MongoDB-backed data persistence
+- PostgreSQL-backed data persistence
 - Swagger API documentation
 
 ## Tech Stack
@@ -36,7 +36,7 @@ It supports end-to-end management of water consumption and billing operations in
 - Java 21
 - Spring Boot 3.5
 - Spring Security
-- MongoDB
+- PostgreSQL
 - JWT authentication
 - Springdoc OpenAPI
 - Razorpay Java SDK
@@ -53,11 +53,18 @@ Before running the project, make sure you have:
 
 - JDK 21+
 - Maven
-- MongoDB running locally
-- Node.js 18+
+- PostgreSQL running locally
+- Node.js 20.19+ or 22.12+
 - npm
 
 ## Backend Setup
+
+Start PostgreSQL with a database named `waterbillingdb`. Set `DB_PASSWORD` to your local PostgreSQL user's password; the default username is `postgres`. For example, with Docker:
+
+```bash
+docker run -d --name waterbilling-postgres -p 127.0.0.1:5432:5432 -e POSTGRES_PASSWORD=local-only-password -e POSTGRES_DB=waterbillingdb postgres:16
+export DB_PASSWORD=local-only-password
+```
 
 ```bash
 cd water-management-backend
@@ -87,26 +94,17 @@ The frontend runs on:
 
 ## Database Configuration
 
-The backend is configured to use MongoDB at:
+Local development uses `jdbc:postgresql://localhost:5432/waterbillingdb`. Set `DB_USERNAME` and `DB_PASSWORD` for your PostgreSQL user, and optionally `JDBC_DATABASE_URL` for a different JDBC address. The database is created separately; Hibernate creates or updates the application's tables on startup. Tests also require a running PostgreSQL database.
 
-```properties
-mongodb://localhost:27017/waterbillingdb
-```
+## Deploy on Render with PostgreSQL
 
-This can be adjusted in:
+The backend uses Spring Data JPA with PostgreSQL. Render builds `water-management-backend/Dockerfile` and checks `/actuator/health`, which reports `DOWN` when PostgreSQL cannot be reached. The frontend's `VITE_API_BASE_URL` points at the backend Render service.
 
-- `water-management-backend/src/main/resources/application.properties`
+1. The Blueprint provisions a free Render Postgres database and links its connection string to the backend's `DATABASE_URL`. [Free Render Postgres expires after 30 days](https://render.com/docs/free#free-postgres); upgrade it to a persistent plan before then to retain data. Alternatively, provide an existing PostgreSQL connection string by replacing the Blueprint's `fromDatabase` reference with `sync: false` and setting `DATABASE_URL` on the backend service. Keep credentials out of git.
+2. On the backend service's Render Environment tab, set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` for the first super admin. Render generates `JWT_SECRET` from the Blueprint and enables the `production` profile. For an existing Blueprint, `sync: false` variables must be set in the service's Environment tab: later Blueprint syncs do not prompt for them.
+3. Deploy/sync `render.yaml` and check `https://water-management-backend.onrender.com/actuator/health` for `{"status":"UP"}`. The frontend must use the backend's actual URL for `VITE_API_BASE_URL`, with `/api` at the end; rebuild the static site after changing it. Log in with the bootstrap admin credentials. The bootstrap account is created only if that email is absent, so later deploys do not reset its password.
 
-## Deploy on Render with MongoDB Atlas
-
-The backend uses Spring Data MongoDB, so it can use MongoDB Atlas without changing its repositories or models. Render builds the backend from `water-management-backend/Dockerfile` and checks `/actuator/health`; the health endpoint reports `DOWN` when MongoDB cannot be reached. The frontend's `VITE_API_BASE_URL` points at the backend Render service.
-
-1. In [MongoDB Atlas](https://cloud.mongodb.com/), create a cluster or use an existing one. Create a **database user** with `readWrite` access to `waterbillingdb`, and allow the backend service's [Render outbound IP addresses](https://render.com/docs/outbound-ip-addresses) in Atlas Network Access. An existing cluster can hold this new database alongside other projects' databases.
-2. In the cluster's **Connect → Drivers** page, copy its connection string. Replace the username and password placeholders (URL-encode special characters) and use `waterbillingdb` as the path, before any query string: `mongodb+srv://USER:PASSWORD@HOST/waterbillingdb?retryWrites=true&w=majority`. Keep this URI out of git.
-3. In the Render dashboard, set `MONGODB_URI` on the **water-management-backend** service to that full URI. Set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` to credentials for your first super admin. Render generates `JWT_SECRET` from the Blueprint and enables the `production` profile. For an existing Blueprint, `sync: false` variables must be set in the service's Environment tab: subsequent Blueprint syncs do not prompt for them.
-4. Deploy/sync `render.yaml` and check `https://water-management-backend.onrender.com/actuator/health` for `{"status":"UP"}`. The frontend must use the backend's actual URL for `VITE_API_BASE_URL`, with `/api` at the end; rebuild the static site after changing it. Log in with the bootstrap admin credentials. The bootstrap account is created only if that email is absent, so later deploys do not reset its password.
-
-Production does not seed demo users or sample records. The local default `mongodb://localhost:27017/waterbillingdb` remains available outside the `production` profile. Production requires `MONGODB_URI` and `JWT_SECRET`; password recovery is unavailable until an email delivery service is configured. If using a database with existing demo users, remove or reset their published credentials before exposing it.
+The new PostgreSQL database starts empty; existing MongoDB records are not copied into it. Production does not seed demo users or sample records. Production requires `DATABASE_URL` and `JWT_SECRET`; password recovery is unavailable until an email delivery service is configured. If importing accounts from an older database, remove or reset their published demo credentials before exposing them.
 
 ## Notes
 - The project uses JWT-based authentication for secure user access.

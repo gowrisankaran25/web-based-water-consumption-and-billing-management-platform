@@ -1,16 +1,21 @@
 package com.watermanagement.model;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@Document(collection = "bulk_water_purchases")
+@Entity
+@Table(name = "bulk_water_purchases")
 public class BulkWaterPurchase {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String communityId;
     

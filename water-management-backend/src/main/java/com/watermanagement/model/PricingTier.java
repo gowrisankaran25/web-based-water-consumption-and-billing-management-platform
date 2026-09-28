@@ -1,10 +1,12 @@
 package com.watermanagement.model;
 
+import jakarta.persistence.Embeddable;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 @Data
+@Embeddable
 @NoArgsConstructor
 @AllArgsConstructor
 public class PricingTier {
