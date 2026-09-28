@@ -55,6 +55,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll() // Open login
+                .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Swagger UI
                 .requestMatchers("/api/superadmin/**").hasRole("SUPER_ADMIN") // Secure Super Admin
                 .requestMatchers("/api/communityadmin/invoices/**", "/api/communityadmin/meters/**").hasAnyRole("SUPER_ADMIN", "COMMUNITY_ADMIN", "RESIDENT")

@@ -1,14 +1,20 @@
 package com.watermanagement.model;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Table;
 import java.time.LocalDate;
 
 @Data
-@Document(collection = "meter_readings")
+@Entity
+@Table(name = "meter_readings")
 public class MeterReading {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String communityId;
     private String flatNumber;
@@ -18,6 +24,7 @@ public class MeterReading {
     
     // Exception & Anomaly Queue
     private Boolean isAnomaly;
+    @Column(columnDefinition = "text")
     private String anomalyReason; // e.g., "Negative consumption", "Usage spiked by 300%"
     
     // IoT Smart Meter support

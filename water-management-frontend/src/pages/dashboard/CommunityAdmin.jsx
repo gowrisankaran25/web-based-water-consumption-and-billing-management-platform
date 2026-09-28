@@ -290,7 +290,7 @@ const AquaTrackDashboard = () => {
                 <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-50 lg:col-span-2">
                   <div className="mb-8">
                     <h2 className="text-lg font-bold text-slate-900 tracking-tight">Top Consuming Households (Liters)</h2>
-                    <p className="text-xs text-slate-400 font-medium mt-1">Dynamically pulled from MongoDB Meter Readings</p>
+                    <p className="text-xs text-slate-400 font-medium mt-1">Based on recent meter readings</p>
                   </div>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -331,7 +331,7 @@ const AquaTrackDashboard = () => {
               <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-50 overflow-hidden mb-8">
                 <div className="p-6 border-b border-slate-50">
                   <h2 className="text-lg font-bold text-slate-900 tracking-tight">Recent Usage Logs</h2>
-                  <p className="text-xs text-slate-400 font-medium mt-1">Live from MongoDB</p>
+                  <p className="text-xs text-slate-400 font-medium mt-1">Recent meter readings</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">

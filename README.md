@@ -21,7 +21,7 @@ It supports end-to-end management of water consumption and billing operations in
 - Payment integration with Razorpay
 - Service ticket handling
 - Notifications and communication support
-- MongoDB-backed data persistence
+- PostgreSQL-backed data persistence
 - Swagger API documentation
 
 ## Tech Stack
@@ -33,10 +33,10 @@ It supports end-to-end management of water consumption and billing operations in
 - Axios
 - Recharts
 ### Backend
-- Java 24
+- Java 21
 - Spring Boot 3.5
 - Spring Security
-- MongoDB
+- PostgreSQL
 - JWT authentication
 - Springdoc OpenAPI
 - Razorpay Java SDK
@@ -51,13 +51,20 @@ It supports end-to-end management of water consumption and billing operations in
 
 Before running the project, make sure you have:
 
-- JDK 24+
+- JDK 21+
 - Maven
-- MongoDB running locally
-- Node.js 18+
+- PostgreSQL running locally
+- Node.js 20.19+ or 22.12+
 - npm
 
 ## Backend Setup
+
+Start PostgreSQL with a database named `waterbillingdb`. Set `DB_PASSWORD` to your local PostgreSQL user's password; the default username is `postgres`. For example, with Docker:
+
+```bash
+docker run -d --name waterbilling-postgres -p 127.0.0.1:5432:5432 -e POSTGRES_PASSWORD=local-only-password -e POSTGRES_DB=waterbillingdb postgres:16
+export DB_PASSWORD=local-only-password
+```
 
 ```bash
 cd water-management-backend
@@ -87,15 +94,17 @@ The frontend runs on:
 
 ## Database Configuration
 
-The backend is configured to use MongoDB at:
+Local development uses `jdbc:postgresql://localhost:5432/waterbillingdb`. Set `DB_USERNAME` and `DB_PASSWORD` for your PostgreSQL user, and optionally `JDBC_DATABASE_URL` for a different JDBC address. The database is created separately; Hibernate creates or updates the application's tables on startup. Tests also require a running PostgreSQL database.
 
-```properties
-mongodb://localhost:27017/waterbillingdb
-```
+## Deploy on Render with PostgreSQL
 
-This can be adjusted in:
+The backend uses Spring Data JPA with PostgreSQL. Render builds `water-management-backend/Dockerfile` and checks `/actuator/health`, which reports `DOWN` when PostgreSQL cannot be reached. The frontend's `VITE_API_BASE_URL` points at the backend Render service.
 
-- `water-management-backend/src/main/resources/application.properties`
+1. Create a dedicated database (for example, `waterbillingdb`) on your existing PostgreSQL server. Do not point this app at another project's database: Hibernate creates or updates tables in the target database. Ensure the provider allows connections from the backend's [Render outbound IP addresses](https://render.com/docs/outbound-ip-addresses).
+2. On the backend service's Render Environment tab, set `DATABASE_URL` to the external provider's connection string, for example `postgresql://USER:PASSWORD@HOST:5432/waterbillingdb?sslmode=require` if TLS is required. URL-encode special characters in the username and password, and keep credentials out of git. Set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` for the first super admin. Render generates `JWT_SECRET` from the Blueprint and enables the `production` profile. For an existing Blueprint, `sync: false` variables must be set in the service's Environment tab: later Blueprint syncs do not prompt for them.
+3. Deploy/sync `render.yaml` and check `https://water-management-backend.onrender.com/actuator/health` for `{"status":"UP"}`. The frontend must use the backend's actual URL for `VITE_API_BASE_URL`, with `/api` at the end; rebuild the static site after changing it. Log in with the bootstrap admin credentials. The bootstrap account is created only if that email is absent, so later deploys do not reset its password.
+
+Existing MongoDB records are not copied into PostgreSQL. Production does not seed demo users or sample records. Production requires `DATABASE_URL` and `JWT_SECRET`; password recovery is unavailable until an email delivery service is configured. If importing accounts from an older database, remove or reset their published demo credentials before exposing them.
 
 ## Notes
 - The project uses JWT-based authentication for secure user access.

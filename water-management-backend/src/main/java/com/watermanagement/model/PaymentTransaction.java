@@ -1,15 +1,20 @@
 package com.watermanagement.model;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 
 @Data
-@Document(collection = "payment_transactions")
+@Entity
+@Table(name = "payment_transactions")
 public class PaymentTransaction {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     
     private String invoiceId;

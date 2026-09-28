@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Component
-@org.springframework.context.annotation.Profile("!test")
+@org.springframework.context.annotation.Profile("!test & !production")
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
@@ -201,5 +201,4 @@ public class DataSeeder implements CommandLineRunner {
         });
     }
 }
-
 

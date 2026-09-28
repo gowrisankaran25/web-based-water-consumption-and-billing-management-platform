@@ -1,14 +1,21 @@
 services:
   - type: web
     name: water-management-backend
-    runtime: java
+    runtime: docker
     rootDir: water-management-backend
-    buildCommand: ./mvnw -q -DskipTests package
-    startCommand: java -jar target/water-management-backend-1.0.0.jar
+    healthCheckPath: /actuator/health
     envVars:
       - key: PORT
         value: 8080
-      - key: MONGODB_URI
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BOOTSTRAP_ADMIN_EMAIL
+        sync: false
+      - key: BOOTSTRAP_ADMIN_PASSWORD
         sync: false
       - key: RAZORPAY_KEY_ID
         sync: false

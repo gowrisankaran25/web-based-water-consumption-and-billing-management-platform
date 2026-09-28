@@ -9,6 +9,7 @@ import com.watermanagement.repository.HouseholdRepository;
 import com.watermanagement.security.JwtUtils;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,6 +30,9 @@ public class AuthController {
     private final HouseholdRepository householdRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
+
+    @Value("${app.demo-mode:true}")
+    private boolean demoMode;
 
     @GetMapping("/communities")
     public ResponseEntity<?> getApprovedCommunities() {
@@ -73,6 +77,10 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
+        if (!"RESIDENT".equals(registerRequest.getRole()) && !"COMMUNITY_ADMIN".equals(registerRequest.getRole())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid registration role"));
+        }
+
         if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: Username is already taken!"));
         }
@@ -119,6 +127,10 @@ public class AuthController {
     }
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        if (!demoMode) {
+            return ResponseEntity.status(503).body(new MessageResponse("Password recovery is unavailable; contact an administrator."));
+        }
+
         java.util.Optional<User> userOpt = userRepository.findByUsername(request.getEmail());
         if (userOpt.isEmpty()) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found with this email."));
@@ -137,16 +149,6 @@ public class AuthController {
         
         // Returning the link in the message for testing/development purposes
         return ResponseEntity.ok(new MessageResponse("Password reset instructions sent. DEV MODE: Click this link to reset: " + resetLink));
-    }
-
-    @PostMapping("/force-reset")
-    public ResponseEntity<?> forceResetPassword(@RequestBody ForceResetRequest request) {
-        java.util.Optional<User> userOpt = userRepository.findByUsername(request.getEmail());
-        if (userOpt.isEmpty()) return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found."));
-        User user = userOpt.get();
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
-        return ResponseEntity.ok(new MessageResponse("Password successfully reset."));
     }
 
     @PostMapping("/reset-password")
@@ -209,14 +211,6 @@ class ForgotPasswordRequest {
 }
 
 @Data
-class ForceResetRequest {
-    private String email;
-    private String newPassword;
-    public String getEmail() { return email; }
-    public String getNewPassword() { return newPassword; }
-}
-
-@Data
 class ResetPasswordRequest {
     private String token;
     private String newPassword;
@@ -254,4 +248,3 @@ class JwtResponse {
         this.residentName = residentName;
     }
 }
-

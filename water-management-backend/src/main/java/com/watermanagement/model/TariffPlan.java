@@ -1,20 +1,33 @@
 package com.watermanagement.model;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Table;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
 
 import java.util.List;
 
 @Data
-@Document(collection = "tariff_plans")
+@Entity
+@Table(name = "tariff_plans")
 public class TariffPlan {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String communityId;
     private String name;
     
     // Core block-tier pricing for water
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "tariff_water_tiers", joinColumns = @JoinColumn(name = "tariff_plan_id"))
+    @OrderColumn(name = "position")
     private List<PricingTier> waterTiers;
     
     // Additional Multi-Service Fees
