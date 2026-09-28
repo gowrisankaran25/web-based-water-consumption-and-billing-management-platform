@@ -3,20 +3,24 @@ package com.watermanagement.security;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
 public class JwtUtils {
 
-    // Generate a secure key for HS256 using a static string for dev so it survives restarts
-    private final String secretString = "WaterManagementSuperSecretKeyForJWTAuth2026!@#";
-    private final SecretKey jwtSecret = Keys.hmacShaKeyFor(secretString.getBytes());
+    private final SecretKey jwtSecret;
     private final int jwtExpirationMs = 86400000; // 24 hours
+
+    public JwtUtils(@Value("${app.jwt-secret:WaterManagementSuperSecretKeyForJWTAuth2026!@#}") String secret) {
+        this.jwtSecret = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String generateJwtToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
