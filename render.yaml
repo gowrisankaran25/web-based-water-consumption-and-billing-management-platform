@@ -10,9 +10,7 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: water-management-db
-          property: connectionString
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: BOOTSTRAP_ADMIN_EMAIL
@@ -32,7 +30,3 @@ services:
     envVars:
       - key: VITE_API_BASE_URL
         value: https://water-management-backend.onrender.com/api
-databases:
-  - name: water-management-db
-    plan: free
-    databaseName: waterbillingdb
